@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup as BS
 import pathlib
 from urllib.request import Request, urlopen
+import time
 
 # import environ vars
 
@@ -49,27 +50,36 @@ def parse_rows(html):
 
 
 # function for generating tweet text
+def groom_tweet_text(groom_name, groom_time):
+    # need to convert UCT to local time
 
+    tweet_text = f"Grooming of {groom_name} has been completed at {groom_time}"
+    return tweet_text
 
 # function for posting tweet
+
+table_data = []
 
 # MAIN
 if __name__ == '__main__':
     # html = get_inspection_page()
+    while(True):
 
-    html = load_inspection_page('inspection_page.html')
-    rows = parse_rows(html)
-    for row in rows:
-        row_items = row.find_all('td')
-        if len(row_items) > 0:
-            print("Here's the start of a new row:")
-            print(row_items[1].text.strip())
-            print(row_items[4].text.strip())
-            print("ROW END")
-            print("***********************************")
+        html = load_inspection_page('inspection_page.html')
+        rows = parse_rows(html)
+        for row in rows:
+            row_items = row.find_all('td')
+            if len(row_items) > 0:
+                data = [row_items[1].text.strip(), row_items[4].text.strip()]
+                if data not in table_data:
+                    table_data.append(data)
+                    current_groom_tweet = groom_tweet_text(data[0], data[1])
+                    print(current_groom_tweet)
+                else:
+                    print("No new data")
+        time.sleep(60)
 
-        # for item in row_items:
-        #     print("Here's an item:")
-        #     print(item.text)
+
+
 
     # print(parsed.prettify())
