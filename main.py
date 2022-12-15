@@ -1,5 +1,5 @@
 # import some packages
-import requests
+
 from bs4 import BeautifulSoup as BS
 import pathlib
 from urllib.request import Request, urlopen
@@ -93,9 +93,25 @@ class Processor():
         tweet_text = f"{groom_name} has been groomed. Completed at {groom_dt[1].strip()} on {groom_dt[0].strip()}."
         return tweet_text
 
-    def status_tweet_text(update):
-        pass
-        # function for generating status report tweet text
+    def convert_tz(groom_time):
+        datetime_list = groom_time.split(', ') # split date from time
+        time_list = datetime_list[1].split(' ') # list of [hr:min, AM/PM]
+        time_str = time_list[0].split(':') # list of [hr, min]
+        hr = int(time_str[0])
+        if hr > 8:
+            hr = hr - 8
+        else:
+            hr = hr - 8 + 12
+            if time_list[-1] == "PM":
+                time_list[-1] = "AM"
+            else:
+                time_list[-1] = "PM"
+
+        time_str[0] = str(hr)
+        time_list[0] = ":".join(time_str)
+        datetime_list[1] = " ".join(time_list)
+        return ", ".join(datetime_list)
+
 class IO():
     def post_tweet(text):
         '''This function will use tweepy api to post a new tweet
@@ -107,21 +123,21 @@ class IO():
         pass
 
 # MAIN
-if __name__ == '__main__':
+if __name__ == '__man__':
 # get list of past tweets
     past_tweets = Data.tweet_check()
 
     while(True):
         html = Data.get_inspection_page()
         new_tweet_text = []
-        html = Data.load_inspection_page('inspection_page.html')
+        # html = Data.load_inspection_page('inspection_page.html')
         soup = BS(html, features="html5lib")
         current_table_data = Processor.parse_table(soup)
         temp_tweet = Processor.parse_temp(soup)
         current_status = Processor.parse_status(soup)
         # go through list of current data and check if it has been tweeted
         for current in current_table_data:
-            current_text = Processor.groom_tweet_text(current[0], current[1])
+            current_text = Processor.groom_tweet_text(current[0], Processor.convert_tz(current[1]))
             flag = True
             for past in past_tweets:
                 # check if current line in table corresponds to a previous tweet
@@ -138,4 +154,8 @@ if __name__ == '__main__':
         for text in new_tweet_text:
             print(text)
             past_tweets.append(text)
-        time.sleep(5)
+        time.sleep(60)
+
+if __name__ == '__main__':
+    test_datetime = 'Dec 13, 8:14 PM' # you need to fix your convert time am/pm is off
+    print(Processor.convert_tz(test_datetime))
