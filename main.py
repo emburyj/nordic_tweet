@@ -13,7 +13,11 @@ consumer_key = os.environ["CONSUMER_KEY"]
 consumer_secret = os.environ["CONSUMER_SECRET"]
 access_token = os.environ["ACCESS_TOKEN"]
 access_token_secret = os.environ["ACCESS_TOKEN_SECRET"]
-
+client = tweepy.Client(bearer_token=bearer_token,
+               consumer_key=consumer_key,
+               consumer_secret=consumer_secret,
+               access_token=access_token,
+               access_token_secret=access_token_secret)
 
 
 # function for scraping html from site
@@ -38,12 +42,8 @@ class Data():
         input:
         output: list of tweets(str)
         '''
-        global bearer_token, consumer_key, consumer_secret, access_token, access_token_secret
-        client = tweepy.Client(bearer_token=bearer_token,
-                       consumer_key=consumer_key,
-                       consumer_secret=consumer_secret,
-                       access_token=access_token,
-                       access_token_secret=access_token_secret)
+        global client
+
         tweets = client.get_home_timeline()
         past_tweets = []
         for item in tweets[0]:
@@ -51,15 +51,6 @@ class Data():
         return past_tweets
 
 class Processor():
-    def html_proccessor(html):
-        '''This function uses BS to process html data to get desired text
-        input: html text (string)
-        output: list of strings to tweet
-        '''
-        soup = BS(html)
-        # check if Today table has data
-        table = Processor.parse_table(soup) # this get html table
-
     # function for parsing html table data
     def parse_table(soup):
         '''This function parses a BS object to get grooming data from Today table
@@ -78,16 +69,28 @@ class Processor():
                 table_data.append([row_items[1].text.strip(), row_items[4].text.strip()])
         return table_data
 
-    def parse_temp(soup):
-        temp_tweet = f"\nCurrent temperature is 23.7F"
-        return temp_tweet
+    def parse_status(soup):
+        html = soup.find_all('npl-reports-single')
+        status_data = html[0].find_all('p')
+        status_text = status_data[0].text.strip()
+        poster_data = html[0].find_all('span')
+        poster = poster_data[-1].text.strip()
+        status_text = f"{status_text}\nPosted by {poster}"
+        return status_text
 
+    def parse_temp(soup):
+        html = soup.find_all('npl-weather')
+        temp_html = html[0].find_all('span')
+        temp_data = temp_html[1].text.split()
+        temp_tweet = f"\nCurrent temperature is {temp_data[0]}."
+        return temp_tweet
 
     def groom_tweet_text(groom_name, groom_time):
         # function for generating groom tweet text
         # need to convert UTC to local time
         # include temp
-        tweet_text = f"{groom_name} has been groomed. Completed at {groom_time}."
+        groom_dt = groom_time.split(',')
+        tweet_text = f"{groom_name} has been groomed. Completed at {groom_dt[1].strip()} on {groom_dt[0].strip()}."
         return tweet_text
 
     def status_tweet_text(update):
@@ -95,22 +98,27 @@ class Processor():
         # function for generating status report tweet text
 class IO():
     def post_tweet(text):
+        '''This function will use tweepy api to post a new tweet
+        input: text (str)
+        output: void
+        '''
+        # global client
+        # client.create_tweet(text=text)
         pass
-        # function for posting tweet
-
 
 # MAIN
 if __name__ == '__main__':
-# get list of tweets
+# get list of past tweets
     past_tweets = Data.tweet_check()
 
     while(True):
-        # html = get_inspection_page()
+        html = Data.get_inspection_page()
         new_tweet_text = []
         html = Data.load_inspection_page('inspection_page.html')
         soup = BS(html, features="html5lib")
         current_table_data = Processor.parse_table(soup)
         temp_tweet = Processor.parse_temp(soup)
+        current_status = Processor.parse_status(soup)
         # go through list of current data and check if it has been tweeted
         for current in current_table_data:
             current_text = Processor.groom_tweet_text(current[0], current[1])
@@ -121,13 +129,13 @@ if __name__ == '__main__':
                     flag = False
             if flag:
                 new_tweet_text.append(current_text + temp_tweet) # this indicates it hasn't been tweeted
-
+        flag = True
+        for past in past_tweets:
+            if current_status in past:
+                flag = False
+        if flag:
+            new_tweet_text.append(current_status + temp_tweet)
         for text in new_tweet_text:
             print(text)
             past_tweets.append(text)
         time.sleep(5)
-
-
-
-
-    # print(parsed.prettify())
