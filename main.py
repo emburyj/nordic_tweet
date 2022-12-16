@@ -46,8 +46,9 @@ class Data():
 
         tweets = client.get_home_timeline()
         past_tweets = []
-        for item in tweets[0]:
-            past_tweets.append(str(item))
+        if tweets[0]:
+            for item in tweets[0]:
+                past_tweets.append(str(item))
         return past_tweets
 
 class Processor():
@@ -101,11 +102,12 @@ class Processor():
         if hr > 8:
             hr = hr - 8
         else:
+            if hr < 8:
+                if time_list[-1] == "PM":
+                    time_list[-1] = "AM"
+                else:
+                    time_list[-1] = "PM"
             hr = hr - 8 + 12
-            if time_list[-1] == "PM":
-                time_list[-1] = "AM"
-            else:
-                time_list[-1] = "PM"
 
         time_str[0] = str(hr)
         time_list[0] = ":".join(time_str)
@@ -118,12 +120,11 @@ class IO():
         input: text (str)
         output: void
         '''
-        # global client
-        # client.create_tweet(text=text)
-        pass
+        global client
+        client.create_tweet(text=text)
 
 # MAIN
-if __name__ == '__man__':
+if __name__ == '__main__':
 # get list of past tweets
     past_tweets = Data.tweet_check()
 
@@ -152,10 +153,7 @@ if __name__ == '__man__':
         if flag:
             new_tweet_text.append(current_status + temp_tweet)
         for text in new_tweet_text:
+            IO.post_tweet(text)
             print(text)
             past_tweets.append(text)
         time.sleep(60)
-
-if __name__ == '__main__':
-    test_datetime = 'Dec 13, 8:14 PM' # you need to fix your convert time am/pm is off
-    print(Processor.convert_tz(test_datetime))
