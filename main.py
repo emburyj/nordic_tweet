@@ -32,7 +32,7 @@ class Data():
         response = page.read()
         return response
 
-    # for test: load stored html
+    # for test: load locally stored html
     def load_inspection_page(name):
         file_path = pathlib.Path(name)
         return file_path.read_text(encoding='utf8')
@@ -127,36 +127,31 @@ class IO():
 if __name__ == '__main__':
 # get list of past tweets
     past_tweets = Data.tweet_check()
-    count = 0
-    while(True):
-        if count > 240:
-            break
-        html = Data.get_inspection_page()
-        new_tweet_text = []
-        # html = Data.load_inspection_page('inspection_page.html')
-        soup = BS(html, features="html5lib")
-        current_table_data = Processor.parse_table(soup)
-        temp_tweet = Processor.parse_temp(soup)
-        current_status = Processor.parse_status(soup)
-        # go through list of current data and check if it has been tweeted
-        for current in current_table_data:
-            current_text = Processor.groom_tweet_text(current[0], Processor.convert_tz(current[1]))
-            flag = True
-            for past in past_tweets:
-                # check if current line in table corresponds to a previous tweet
-                if current_text in past:
-                    flag = False
-            if flag:
-                new_tweet_text.append(current_text + temp_tweet) # this indicates it hasn't been tweeted
+
+    html = Data.get_inspection_page()
+    new_tweet_text = []
+    # html = Data.load_inspection_page('inspection_page.html')
+    soup = BS(html, features="html5lib")
+    current_table_data = Processor.parse_table(soup)
+    temp_tweet = Processor.parse_temp(soup)
+    current_status = Processor.parse_status(soup)
+    # go through list of current data and check if it has been tweeted
+    for current in current_table_data:
+        current_text = Processor.groom_tweet_text(current[0], Processor.convert_tz(current[1]))
         flag = True
         for past in past_tweets:
-            if current_status in past:
+            # check if current line in table corresponds to a previous tweet
+            if current_text in past:
                 flag = False
         if flag:
-            new_tweet_text.append(current_status + temp_tweet)
-        for text in new_tweet_text:
-            IO.post_tweet(text)
-            print(text)
-            past_tweets.append(text)
-        time.sleep(60)
-        count+=1
+            new_tweet_text.append(current_text + temp_tweet) # this indicates it hasn't been tweeted
+    flag = True
+    for past in past_tweets:
+        if current_status in past:
+            flag = False
+    if flag:
+        new_tweet_text.append(current_status + temp_tweet)
+    for text in new_tweet_text:
+        IO.post_tweet(text)
+        # print(text)
+        past_tweets.append(text)
