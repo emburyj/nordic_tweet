@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 # import some packages
 
 from bs4 import BeautifulSoup as BS
