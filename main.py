@@ -154,5 +154,5 @@ if __name__ == '__main__':
         new_tweet_text.append(current_status + temp_tweet)
     for text in new_tweet_text:
         IO.post_tweet(text)
-        # print(text)
+        print(text)
         past_tweets.append(text)
