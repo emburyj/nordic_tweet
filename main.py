@@ -127,8 +127,10 @@ class IO():
 if __name__ == '__main__':
 # get list of past tweets
     past_tweets = Data.tweet_check()
-
+    count = 0
     while(True):
+        if count > 240:
+            break
         html = Data.get_inspection_page()
         new_tweet_text = []
         # html = Data.load_inspection_page('inspection_page.html')
@@ -157,3 +159,4 @@ if __name__ == '__main__':
             print(text)
             past_tweets.append(text)
         time.sleep(60)
+        count+=1
