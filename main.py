@@ -138,7 +138,8 @@ if __name__ == '__main__':
     current_status = Processor.parse_status(soup)
     # go through list of current data and check if it has been tweeted
     for current in current_table_data:
-        current_text = Processor.groom_tweet_text(current[0], Processor.convert_tz(current[1]))
+        current_text = Processor.groom_tweet_text(current[0], current[1])
+        # current_text = Processor.groom_tweet_text(current[0], Processor.convert_tz(current[1]))
         flag = True
         for past in past_tweets:
             # check if current line in table corresponds to a previous tweet
